@@ -21,7 +21,7 @@ int main()
     }
 
     if (5==i) {
-       auto wpid =  waitpid(-1,NULL,WNIHANG);//-1相当于wait
+       auto wpid =  waitpid(-1,NULL,WNOHANG);//-1相当于wait
        if (wpid==-1){
         perror("waitpid error");
         exit(1);
