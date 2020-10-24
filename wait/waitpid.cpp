@@ -5,7 +5,6 @@
 #include <iostream>
 #include <sys/wait.h>
 /*
-2020/10/23.waitpid回收子进程 09
 */
 int main()
 {
@@ -26,8 +25,7 @@ int main()
         perror("waitpid error");
         exit(1);
        }
-        std::cout<<"parent process,wait a child finish:"<<wpid;
-        printf("parent\n");
+        std::cout<<"parent process,wait a child finish:"<<wpid<<std::endl;
     }
     else {
         sleep(i);
