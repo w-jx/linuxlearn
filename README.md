@@ -106,6 +106,6 @@ i am 5th child,pid=23116
 
 ​		不需要提前存储，把wpid  =waitpid(-1,null ,options)作为循环条件进行子进程回收，也可以实现回收多个子进程
 
-​	9.waitpractice.cpp
+#### 9.waitpractice.cpp
 
 ​		练习题：父进程fork3个子进程，三个子进程，一个调用ps命令，一个调用自定义程序1（正常），一个调用自定义程序2（会出现错误），父进程利用waitpid对其子进程进行回收
