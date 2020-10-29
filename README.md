@@ -181,3 +181,41 @@ i am 5th child,pid=23116
 
 
 
+### 5.linuxsystem文件夹--前面linux系统基础知识
+
+#### 	1.open文件夹
+
+##### 			1.open.c
+
+​					利用open()创建文件，配合O_RDONLY,O_CREAT代表文件不存在时候创建文件，O_TRUNC代表文件			存在截断文件，让文件内容为空。首先可以创建文件
+
+```cpp
+				int fd;
+
+​				fd = open(“1.txt”,O_RDONLY|O_CREAT);//可以发现文件已经被创建
+```
+
+​				其次在1.txt中输入内容，利用ll命令可以发现1.txt文件大小不为0，更改程序					
+
+```CPP
+				fd = open(“1.txt”,O_RDONLY|O_CREAT|O_TRUNC,0644);//文件截断、清空,ll可以查看
+```
+
+##### 			2.open1.c
+
+​					查看创建出的文件权限是否是 =mode &~umask,模式umask是0002，mode 设置成0777，利用ll查看			创建出的文件的实际权限
+
+```cpp
+				fd = open(“2.txt”,O_RDONLY|O_CREAT|O_TRUNC,0777);
+```
+
+​				实际权限为：	775。				777 &775=775,644&775=644
+
+```
+				-rwxrwxr-x 1 wenjx wenjx     0 10月 29 21:22 2.txt*
+				-rw-r--r-- 1 wenjx wenjx     0 10月 29 21:06 1.txt
+```
+
+##### 3.open3.c
+
+​					open常见错误和错误原因读取
