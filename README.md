@@ -107,9 +107,6 @@ i am 5th child,pid=23116
 ​		不需要提前存储，把wpid  =waitpid(-1,null ,options)作为循环条件进行子进程回收，也可以实现回收多个子进程
 
 #### 9.waitpractice.cpp
-<<<<<<< Updated upstream
-=======
-
 ​		练习题：父进程fork3个子进程，三个子进程，一个调用ps命令，一个调用自定义程序1（正常），一个调用自定义程序2（会出现错误），父进程利用waitpid对其子进程进行回收
 
 ### 4.ifc文件夹----进程间通信
@@ -127,5 +124,4 @@ i am 5th child,pid=23116
 ##### 			3.pipe3.c
 
 ​					 在ret后面添加输出，可以得到正常情况下输出12，是父进程写的字符长度，现在在父进程sleep(3)后面添加关闭写管道，观察返回ret返回0的现象
->>>>>>> Stashed changes
 
