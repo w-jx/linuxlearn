@@ -5,37 +5,17 @@
 #include <iostream>
 #include <sys/wait.h>
 #include <vector>
-//回收多个子进程测试
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
-//第一个子进程调用ps命令
-void pscall() 
-{
-    printf("ps aux调用\n");
-    execlp("ps","ps","aux",">","1.txt",NULL);
-
-
-}
-//第二个子进程调用正常程序
-int print()
-{
-    std::cout<<"heello,world\n";
-    return 28;
-
-}
-//第三个子进程调用一个会出错的程序
-void myvector()
-{
-    std::vector<int> v;
-
-    std::cout<<"v[1]="<<v[1]<<std::endl;
-}
+//练习，wait
 int main()
 {
     pid_t pid,wpid;
     int i;
 
     for(i=0;i<3;i++) {
-
 
         pid=fork();
 
@@ -44,24 +24,57 @@ int main()
 
     }
 
-    switch(pid)
-    {
+    if (i==0) {
 
-        case 0:
-            pscall();
-            break;
-        case 1:
-            print();
-            break;
-        case 2:
-            myvector();
-            break;
-        case 3:
-            printf("parent\n");
-        default:
-            break;
+        sleep(i);
+        int fd;
+
+        fd = open("1.txt",O_RDWR);
+        dup2(fd,STDOUT_FILENO);
+        printf("ps aux调用\n");
+        execlp("ps","ps","aux",NULL);
+
+    }
+    else if (i==1) {
+
+        sleep(i);
+        execl("./test","test",NULL);
+        perror("execl error");
+        exit(1);
+
+    }
+    else if (i==2) {//错误的程序
+
+        sleep(i);
+        std::vector<int> v;
+        std::cout<<"v[1]="<<v[1]<<std::endl;
+
     }
 
+    else  {//父进程回收子线程
+
+        sleep(i);
+        int status;
+        pid_t wpid;
+
+        while ( (wpid =wait(&status)) !=-1 )
+        {
+            std::cout<<"wpid="<<wpid<<std::endl;
+
+            if ( WIFEXITED(status) ) {
+
+                printf("return value %d\n",WEXITSTATUS(status));
+
+            }
+            else if ( WIFSIGNALED(status) ) {
+
+                printf("died by signal %d\n",WTERMSIG(status));
+
+            }
+
+        }
+
+    }
 
     return 0;
 }

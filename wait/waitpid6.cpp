@@ -8,8 +8,7 @@
 //回收多个子进程测试
 int main()
 {
-    std::vector<pid_t> v;
-    pid_t pid,wpid,tempid;  
+    pid_t pid,wpid;  
     int i; 
 
     for (i=0; i < 5; i++) {
@@ -17,26 +16,15 @@ int main()
 
         if (pid==0)//fork()函数子进程返回0，
             break;
-
-        v.push_back(pid);
     }
 
     if (5==i) {
         sleep(5);
-
-        for (auto iter: v) {
-
-            wpid=waitpid(iter,NULL,WNOHANG);//指定一个进程回收,阻塞模式
-            if (wpid==-1){
-                perror("waitpid error");
-                exit(1);
-            }
+        while ( (wpid=waitpid(-1,NULL,WNOHANG)) !=-1 ){//无差别回收
             std::cout<<"parent process,wait a child finish:"<<wpid<<std::endl;;
-
         }
-
-
     }
+
     else {
         sleep(i);
         printf("i am %dth child,pid=%d\n",i+1,getpid());

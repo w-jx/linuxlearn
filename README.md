@@ -125,6 +125,44 @@ i am 5th child,pid=23116
 #### 9.waitpractice.cpp
 ​		练习题：父进程fork3个子进程，三个子进程，一个调用ps命令，一个调用自定义程序1（正常），一个调用自定义程序2（会出现错误），父进程利用waitpid对其子进程进行回收
 
+​		1.for循环创建三个线程
+
+```cpp
+ 18     for(i=0;i<3;i++) {
+ 20         pid=fork();
+ 22         if (pid==0)
+ 23             break;
+ 25     }   
+```
+
+​		2.根据i==0,1,2执行子线程的程序
+
+​		3.i==3是父线程，进行回收，利用宏来得到线程退出原因	
+
+```cpp
+ 60         while ( (wpid =wait(&status)) !=-1 )
+ 61         {
+ 62             std::cout<<"wpid="<<wpid<<std::endl;
+ 63 
+ 64             if ( WIFEXITED(status) ) {
+ 65 
+ 66                 printf("return value %d\n",WEXITSTATUS(status));
+ 67 
+ 68             }
+ 69             else if ( WIFSIGNALED(status) ) {
+ 70 
+ 71                 printf("died by signal %d\n",WTERMSIG(status));
+ 72 
+ 73             }
+ 74 
+ 75         }
+
+```
+
+​	
+
+
+
 ### 4.ifc文件夹----进程间通信
 
 #### 	1.pipe文件夹
