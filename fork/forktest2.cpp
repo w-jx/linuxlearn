@@ -9,16 +9,16 @@ int main()
 
 
     pid_t pid; 
-    int i = 0;
+    int i ;
 
-    for (; i < 5; i++)
+    for (int i=0; i < 5; i++)
     {
         if (fork() == 0)
             break;
     }
 
     if (5==i) {
-        sleep(5);
+        sleep(5);//sleep(5)也就是sleep(i);
         printf("parent\n");
     }
     else {

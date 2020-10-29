@@ -10,7 +10,8 @@
 int main(){
 
     int fd;
-    fd =open("ps.out",O_WRONLY|O_CREAT|O_TRUNC,0644);
+    //fd =open("ps.out",O_WRONLY|O_CREAT|O_TRUNC,0644);
+    fd =open("1.txt",O_WRONLY|O_CREAT|O_TRUNC,0644);
     if (fd<0) {
         perror("open ps.out error");
         exit(1);

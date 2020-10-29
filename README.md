@@ -7,7 +7,23 @@
 
 #### 	1.psaux.c
 
-​			利用execlp函数将 ps aux命令的输出结果输出的ps.out文件中
+​			利用execlp函数将 ps aux命令的输出结果输出的ps.out文件中，注意dup2重定向文件描述符函数的简单使用：
+
+```cpp
+int dup2(int odlfd, int newfd);
+```
+
+​			dup2()用来复制参数oldfd 所指的文件描述词, 并将它拷贝至参数newfd 后一块返回. 若参数newfd为一已打开的文件描述词, 则newfd 所指的文件会先被关闭. dup2()所复制的文件描述词, 与原来的文件描述词共享各种文件状态, 详情可参考dup().
+
+​			正常执行execlp("ps","ps","aux",NULL)会在命令行中输出，我们想要将输出结果显示在文件中，首先需要打开文件，然后重定向文件描述符
+
+```cpp
+int fd = open();//打开文件
+dup2(fd,STDOUT_FILENO);//重定向标准输出
+execlp("ps","ps","aux",NULL);
+```
+
+ 
 
 ### 2.fork文件夹
 
