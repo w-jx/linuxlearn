@@ -34,7 +34,7 @@ int main(){
 
         close(fd[0]);//关闭读
         sleep(1);//
-        close(fd[1]);
+        close(fd[1]);//关闭写端，read返回0,所以ret=0
         write(fd[1],str,strlen(str));
         close(fd[1]);
     }

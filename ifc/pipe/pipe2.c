@@ -32,7 +32,7 @@ int main(){
     else if (pid>0) {//父进程
 
         close(fd[0]);//关闭读
-        sleep(3);//
+        sleep(3);//父进程延时，这样父进程写就延时，这样管道无数据
         write(fd[1],str,strlen(str));
         close(fd[1]);
     }
