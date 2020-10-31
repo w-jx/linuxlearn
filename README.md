@@ -216,6 +216,6 @@ i am 5th child,pid=23116
 				-rw-r--r-- 1 wenjx wenjx     0 10月 29 21:06 1.txt
 ```
 
-##### 3.open3.c
+##### 3.open2.c
 
-​					open常见错误和错误原因读取
+​					open常见错误和错误原因的测试，第一个错误是打开不存在的文件,提示 not a such file or dictionary；第二个错误是写方式打开只读文件，提示permission denied；第三个错误是写方式打开目录，提示* is a dictionary。三个错误分别对应test01(),test02(),test03();
