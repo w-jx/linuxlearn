@@ -26,12 +26,29 @@ void test01()
 
     close(fd);
 }
+//以写方式打开只读文件，打开文件没有相应权限
+void test02()
+{
+    int fd =0;
+    fd = open("readonly.txt",O_WRONLY);
+    printf("fd=%d,errno=%d:%s\n",fd,errno,strerror(errno));
+    close(fd);
+
+}
+void test03()
+{
+    int fd =0;
+    fd = open(".",O_WRONLY);//写方式打开目录
+    printf("fd=%d,errno=%d:%s\n",fd,errno,strerror(errno));
+    close(fd);
+
+}
 int main(){
 
 
-    test01();
+    //test01();//打开不存在的文件报错
+    //test02();//以写方式打开只读文件报错
+    test03();//写方式打开目录
 
-
-
-return 0 ;
+    return 0 ;
 }
