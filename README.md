@@ -217,7 +217,66 @@ i am 5th child,pid=23116
 
 ​				利用mmap创建映射区，因为映射的是文件，首先应该新建个文件，但是映射的大小要小于等于文件大小，新文件的大小是0，因此我们需要用ftruncate扩展下文件的大小，并且利用lseek(fd,0,SEEK_END)获得文件大小len,将len作为创建映射区的长度，映射区创建成功后我们得到指针p,可以利用strcpy写入p,也可以利用printf("%s",p)直接读取文件内容（写和读不需要借助read/write。最后利用munmap(p,len)来释放指针空间。
 
-​		
+##### 2.mmap2.c
+
+​			常见的mmap的注意事项和测试mmap的错误
+
+##### 3.mmap3.c
+
+​			其他参数满足的情况下，如果创建映射区时的映射区访问权限为私有，创建映射区不会出现错误，但是对映射区指针的修改只会对内存有效，不会反映到磁盘上
+
+##### 4.mmap4.c
+
+​			父子进程间mmap通信，首先先打开文件建立映射区，确认映射区建设成功以后，fork子进程。有下面几个知识点的回顾和学习。
+
+​	1.首先有个全局变量var=100,在子进程var+=100,父进程不操作，分别输出var，可以看到父子进程输出结果分别是200,100
+
+​	2.对于
+
+`p=mmap(NULL,len,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);`
+
+返回值void*型指针，分别在父子进程中打印*p=%d，可以发现父子进程的输出结果一致。但是如果把MAP_SHARED改成MAP_PRIVATE，发现父进程的*p变成0了
+
+##### 5.mmap5.c
+
+​		如果创建映射区的时候
+
+```cpp
+p = (int*)mmap(NULL,len,PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);
+```
+
+这边可以输出下*p,发现是0,然后这个p我们在子进程修改指针p的大小，*p+=10,然后在父子进程中分别输出*p的大小，发现子进程是10，父进程还是0.这就意味着我们没有实现共享。只要改成MAP_SHARED，父子进程的输出都是10
+
+##### 6.mmap6_r.c&mmap6_w.c
+
+​			映射区实现非血缘关系的两个进程间通信。
+
+​			mmap6_w.c:
+
+​				首先是写端，建立映射区，这边建立映射区的大小是一个结构体的大小
+
+```cpp
+ 23 struct Student
+ 24 {
+ 25     int id;
+ 26     char name[256];
+ 27     int age;
+ 28 };
+```
+
+```cpp
+p = mmap(NULL,sizeof(stu),PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)		
+```
+
+这样利用memcpy将结构体student的内容放到指针p中，这样指针p可以修改id，不断修改id
+
+​		mmap6_r.c：
+
+​			在读端建立映射区是相同的，然后不断读取指针p的内容，可以看到在写进程更改的内容，在读进程能够读取到
+
+##### 7.mmap7.c
+
+​		建立匿名映射区，不再需要打开文件了
 
 ### 5.linuxsystem文件夹--前面linux系统基础知识
 
@@ -257,3 +316,14 @@ i am 5th child,pid=23116
 ##### 3.open2.c
 
 ​					open常见错误和错误原因的测试，第一个错误是打开不存在的文件,提示 not a such file or dictionary；第二个错误是写方式打开只读文件，提示permission denied；第三个错误是写方式打开目录，提示* is a dictionary。三个错误分别对应test01(),test02(),test03();
+
+#### 2.makefile文件夹
+
+​		一些 关于makefile编写规则的文件夹和测试c文件
+
+#### 3.io_rw文件夹
+
+##### 	1.tinycp.c
+
+​			利用read\write函数实现cp的简单功能，注意cp的目标文件的打开要指明0644权限，不然会出现空文件和访问拒绝现象
+
