@@ -319,7 +319,7 @@ p = mmap(NULL,sizeof(stu),PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)
 
 #### 2.makefile文件夹
 
-​		一些 关于makefile编写规则的文件夹和测试c文件
+​		一些 关于makefile编写规则的文件夹和测试c文件，最重要的文件就是Makefile
 
 #### 3.io_rw文件夹
 
