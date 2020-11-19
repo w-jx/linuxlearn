@@ -278,7 +278,172 @@ p = mmap(NULL,sizeof(stu),PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)
 
 ​		建立匿名映射区，不再需要打开文件了
 
-### 5.linuxsystem文件夹--前面linux系统基础知识
+### 5.signals文件夹
+
+#### 	1.killtest.c
+
+​		利用 killstatus =  kill(getppid(),SIGKILL);给进程发送SIGKILL信号，返回值0代表成功发送信号。观察现象。可以发现程序执行后输出killed后结束,因为SIGKILL的作用
+
+#### 	 2.killtest2.c
+
+​		发送信号改成 killstatus =  kill(getppid(),SIGFPE)，观察输出现象。和上面的几乎一样，唯一区别是输出“Floating point exception (core dumped)”结束，因为SIGFPE的作用
+
+#### 		3.killpractice.c
+
+​		循环创建5个子进程，父进程用kill函数终止任一子进程。还是利用下标来判断是父进程还是子进程，父进程的下标i=5,然后pid=fork(),kill函数放在父进程中  int status = kill(pid,SIGKILL);
+
+父进程的pid一定是子进程的id,所以能够杀死一个子进程
+
+#### 		4.alarm.c
+
+​		定义变量i=0，alarm(1)查看1秒钟内电脑进行多少次运算，i++,输出i,1秒到了后程序结束，输出alarm clock，可以发现运行不到2000次。
+
+​		time ./alarm 可以在运行程序时计算程序运行的系统时间，用户时间，实际时间，等待时间
+
+​		time ./alarm >out将之前printf的结果输出到out文件中，结果一秒钟运行了接近800万次，可见io输出是很浪费时间的。
+
+#### 		5.setitimer.c
+
+​		程序的主要功能和alarm.c一样，也是查看每秒钟电脑进行多少次运行。setitimer比alarm多了很多参数，可以实现周期定时，配置也复杂一点。it_interval是间隔时间，it_value是定时时间
+
+```c
+ 23 struct itimerval new_t;
+ 24 struct itimerval old_t;
+ 25
+ 26 new_t.it_interval.tv_sec = 0;
+ 27 new_t.it_interval.tv_usec = 0;
+ 28 new_t.it_value.tv_sec = 1;
+ 29 new_t.it_value.tv_usec = 0;
+ 30
+ 31 old_t.it_interval.tv_sec = 0;
+ 32 old_t.it_interval.tv_usec = 0;
+ 33 old_t.it_value.tv_sec = 0;
+ 34 old_t.it_value.tv_usec = 0;
+ 35
+ 36 setitimer(ITIMER_REAL,&new_t,&old_t);
+```
+
+#### 		6.sigopera文件夹：和信号操作有关
+
+##### 				1.sigtest.c
+
+​					测试屏蔽信号SIGINT，正常一个程序执行时，按ctrl+c会程序停止。流程如下：
+
+```
+ 36     sigset_t set,oldset,pedset;
+ 37     int ret=0;
+ 38     sigemptyset(&set);
+ 39     sigaddset(&set,SIGINT);
+ 41     ret = sigprocmask(SIG_BLOCK,&set,&oldset);
+```
+
+​	第一步定义sigset_t类型的变量，第二步清空，利用sigemptyset，第三步添加信号屏蔽字，sigaddset(&set,SIGINT),第四步用自己的set替换mask，利用sigprocmask函数，其中宏SIG_BLOCK是设置阻塞的意思。
+
+​	我们的程序可以用死循环来验证，无法用ctrl+c中断程序。也可以利用  ret = sigpending(&pedset);来查看2号信号SIGINT的未决信号集位图是否为1.执行程序时，可以发现在没有任何按键的时候，程序输出32个0，当按下ctrl+c时，2号变为1，证明了信号的确被屏蔽了。
+
+​	同时可以屏蔽多个信号，我们sigaddset(&set,SIGKILL),在执行程序，发现ctrl+z依旧可以终止程序，验证了SIGKILL不可被屏蔽。
+
+##### 			2.sigcatch.c
+
+​			利用signal函数来注册信号的捕捉，可以查看函数原型
+
+```c
+ #include <signal.h>
+ typedef void (*sighandler_t)(int);
+ sighandler_t signal(int signum, sighandler_t handler);
+```
+
+​	sighandler_t是一个函数指针类型，参数1是信号编号，信号2是一个回调函数，回调函数必须返回值void,参数为int型变量。
+
+​	 signal(SIGINT,sig_catch);就是注册了2号信号的捕捉函数为sig_catch，可以发现程序执行时，我们按下ctrl+c，内核会去调用sig_catch函数。
+
+​		因为signal在不同版本linux含义不同，所以信号的捕捉应该用sigaction函数。
+
+##### 3.sigactioncatch.c
+
+​	利用sigaction函数完成注册信号的捕捉
+
+```c
+ #include <signal.h>
+ int sigaction(int signum, const struct sigaction *act,struct sigaction *oldact);
+```
+```c
+ struct sigaction {
+ void     (*sa_handler)(int);
+ void     (*sa_sigaction)(int, siginfo_t *, void *);
+ sigset_t   sa_mask;
+ int        sa_flags;
+ void     (*sa_restorer)(void);
+       };
+```
+sigaction函数参数1是注册信号，参数2和3是两个结构体参数，使用标准方法：
+
+```c
+ 27     struct sigaction act,oldact;
+ 28     //结构体的赋值
+ 29     act.sa_handler=sig_catch;
+ 30     sigemptyset(&(act.sa_mask));//只在捕捉函数时有效
+ 31     act.sa_flags =0;
+ 35     ret  = sigaction(SIGINT,&act,&oldact);//注册信号捕捉函数
+```
+
+sa_flags默认设置0，屏蔽2号信号执行函数时，再来2号信号时默认屏蔽。
+
+##### 4.sigactioncatch2.c
+
+​	在sigactioncatch.c的基础上，我们注册了SIGINT信号的捕捉函数，在这期间，我们也可以同时设置其他信号的屏蔽，利用:
+
+ sigaddset(&act.sa_mask,SIGQUIT);//设置屏蔽 
+
+可以发现SIGQUIT信号也没有用了。注意在设置信号捕捉期间，是用sa_mask替代mask,mask生命周期是程序创建到程序结束。所以这个实际上验证了sa_mask在捕捉函数执行期间的屏蔽作用。
+
+##### 5.catchchild.c
+
+​	SIGCHLD信号是子进程的状态发生变化，子进程就会发出这个信号，可以利用这个信号回收子进程。循环创建5个子进程，在i==5的时候，是父进程，然后父进程设置如下：
+
+```c
+ 43         struct sigaction act,oldact;
+ 44         act.sa_handler=catch_Child;
+ 45         sigemptyset(&(act.sa_mask));
+ 46         act.sa_flags=0;
+ 47         //sigaction(SIGCHLD,&act,&oldact);
+ 48         sigaction(SIGCHLD,&act,NULL);
+```
+
+注意oldact含义是代表原来对信号的处理方式，我们可以传NULL，或者只是定义struct sigaction oldact，然后传过去就行。这个版本在父进程中while(1);然后子进程中设置了sleep(5)；如果是父进程先执行，那么父进程注册了捕捉后，就阻塞等待，子进程之所以要sleep（5）的原因是，有可能子进程先执行，此时父进程还尚未注册，那么子进程结束后可能没有回收成为僵尸进程，有sleep(5)可以确保父进程先执行，子进程后执行，避免僵尸进程。但是阻塞在这sleep(5)会造成程序卡顿缓慢。
+
+##### 6.catchchild2.c
+
+​	上面的catchchild.c sleep可以解决僵尸进程问题，但是有弊端，我们可以利用循环回收来解决，不用睡眠。代码如下：
+
+```
+ 27     while(( wpid = wait(&status))!=-1) {
+ 28         if (WIFEXITED(status)) {
+ 29             printf("-------------seesee-------:catch child：%d,retvalue=%d,\n",wpid,WEXITSTATUS(status));
+ 30         }
+ 31     }
+```
+
+wait回收失败返回-1这样可以进行循环回收。然后这边子进程没有sleep.
+
+##### 7.catchchild3.c
+
+​		之前的程序父进程while(1)阻塞，虽然子进程的僵尸进程问题解决了，但是由于父进程只能用ctrl+z终止，这样就会导致父进程出现僵尸进程。解决方法是在父进程注册SIGCHLD信号捕捉前，先屏蔽SIGCHLD信号；
+
+```c
+ 43     sigset_t set;
+ 44     sigemptyset(&set);
+ 45     sigaddset(&set,SIGCHLD);
+ 46     sigprocmask(SIG_BLOCK,&set,NULL);
+```
+
+然后在注册信号捕捉函数之后，解除屏蔽：
+
+​	sigprocmask(SIG_UNBLOCK,&set,NULL);
+
+这样父进程不用while(1)；阻塞，子进程也不用睡眠
+
+### 6.linuxsystem文件夹--前面linux系统基础知识
 
 #### 	1.open文件夹
 
