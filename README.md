@@ -457,6 +457,92 @@ wait回收失败返回-1这样可以进行循环回收。然后这边子进程�
 
 ​		第六步：守护进程是后台服务进程，一直在运行的，所以我们用while(1);来模拟这种状态。
 
+### 7.pthread文件夹
+
+#### 		1.create_pth.c
+
+​			pthread_create（&tid,NULL,回调函数，回调函数参数）尝试创建线程，并且在子线程中输出一句话，实际运行发现子线程没有进行。原因是线程创建完毕后主进程就return 0结束了，子线程完全没有执行的机会。
+
+#### 		2.create_pth2.c
+
+​			在create_pth.c的基础上，创建线程后，进行sleep(1)这样不至于刚创建线程完毕就执行return 0,给子线程运行的机会，发现子线程正常运行了
+
+#### 		3.create_pth3.c
+
+​			循环创建5个子线程，我自己最开始写的版本，虽然创建成功，输出的结果也是正常的，实际上是有漏洞的。
+
+```c
+ 34     for(int i=0;i<5;i++) {
+ 35         ret =  pthread_create(&tid,NULL,tfn,&i);//去执行函数
+ 36         if (ret!=0)
+ 37             geterror("create error");
+ 38 
+ 39        sleep(1);
+ 40     }
+
+```
+
+ `printf("thread %d:pid=%d,tid=%lu,\n",*(int*)arg,getpid(),pthread_self());``
+
+问题就在于我这边传的是地址，传完地址到子线程输出的时候，因为每创建一个线程，就sleep(1),所以这时候通过地址去读i，还是可以读到结果的。
+
+#### 		4.create_pth4.c
+
+​			教程里给的标准版本，没有漏洞的版本。
+
+```c
+ 34     for(int i=0;i<5;i++) {
+ 35         ret =  pthread_create(&tid,NULL,tfn,(void*)i);//去执行函数
+ 36         if (ret!=0)
+ 37             geterror("create error");
+ 38       // sleep(1);这个sleep(1)放在这边还是放在下面都是可以正常输出
+ 39 
+ 40     }  
+//子线程输出语句
+25  printf("thread %d:pid=%d,tid=%lu,\n",(int)arg,getpid(),pthread_self());
+
+
+```
+
+区别在于这边是直接传的值，而不是地址，这样，即使创建线程结束后没有sleep，即便在子线程还没有执行到i就发生变化，也不影响。
+
+#### 		5.create_pth5.c
+
+​		错误演示版本。
+
+```c
+ 35     for(int i=0;i<5;i++) {
+ 36         ret =  pthread_create(&tid,NULL,tfn,&i);//去执行函数
+ 37         if (ret!=0)
+ 38             geterror("create error");
+ 39 
+ 40     }
+     printf("thread %d:pid=%d,tid=%lu,\n",*(int*)arg,getpid(),pthread_self());
+
+```
+
+传的是指针，然后也没有睡眠，当子进程还尚未执行的时候，i的值已经变动，所以输出的结果不是传值的那个结果。
+
+#### 		6.thread_share.c
+
+​		 验证线程共享全局变量
+
+#### 		7.pth_exit.c
+
+​		想要在create_pth4.c的基础上，如果i==2的话，就exit(0)结束，按照设想thread3就不会输出，会打印thread1,2,4,5。但是实际运行显示的1，2等。原因就是exit(0)执行会导致整个进程退出。然后注释exit(0),改成return NULL,就会打印thread1,2,4,5.说明return NULL会导致线程退出。不过线程在回调函数中，即便是普通函数也会让函数结束。
+
+```c
+ 26     if (i==2) {
+ 27         //exit(0);//效果不好，整个进程都退出了
+ 28         return NULL;
+ 29     }
+
+```
+
+
+
+​		
+
 
 
 ### 6.linuxsystem文件夹--前面linux系统基础知识
