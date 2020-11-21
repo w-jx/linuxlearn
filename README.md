@@ -539,9 +539,231 @@ wait回收失败返回-1这样可以进行循环回收。然后这边子进程�
 
 ```
 
+#### 8.pth_exit2.c
 
+​		把return NULL写到函数func()中，然后i==2时调用func(),其他逻辑和pth_exit.c相同，不能实现预想的功能，而是打印的是thread1，2，3，4，5.原因是因为return 语句并不是退出，而是返回到调用者那里去。
 
-​		
+```c
+ 23 void* func(void) {
+ 24
+ 25     return NULL;
+ 26 }
+```
+
+```c
+ 30     if (i==2) {
+ 31         //exit(0);//效果不好，整个进程都退出了
+ 32         // return NULL;
+ 33         func();
+ 34     }
+```
+
+在func()中return ,那么就会回到if语句这边，线程接着执行下面的打印语句。
+
+#### 9.pth_exit3.c
+
+​		利用pthread_exit函数来退出线程，不管是和pth_exit.c一样放在if语句中，还是和pth_exit2.c一样在if语句中调用func()函数，在func函数里执行pthread_exit(),都可以实现线程退出。因为pthread_exit()函数的作用就是退出当前线程。
+
+#### 10.pth_join.c
+
+​		pthread_join函数阻塞回收线程的使用示例，首先是创建线程，我们的线程里有一个结构体，如下：
+
+```c
+ 22 struct thrd {
+ 23     int var;
+ 24     char str[256];
+ 25 };
+```
+
+线程的作用就是定义一个结构体指针，赋值后返回，注意线程回调函数返回值void *类型，所以返回值是
+
+​	   `return (void*)tval;`
+
+然后利用pthread_join来回收，有两个参数，参数1就是线程id,参数2是一个2级指针类型，参数2是存储子线程的退出值的。回收过程如下
+
+```c
+  struct thrd *retval;
+  ret = pthread_join(tid,(void**)&retval);
+```
+
+然后返回值ret==0的话，证明回收成功，我们就可以读取这个retval的值，输出如下：
+
+printf("child thread with var=%d,str=%s\n",retval->var,retval->str);
+
+当然最后可以释放一下这个结构体指针。
+
+#### 11.pth_join2.c
+
+​		整体逻辑和pth_join.c相似，子进程代码如下：
+
+```c
+ 23 void * tfn(void * arg) {
+ 24     int a=10;
+ 25     return (void*)&a;
+ 26 }
+```
+
+然后用pthread_join阻塞回收，并读取线程的退出值，代码如下：
+
+```c
+ int *val;
+ ret = pthread_join(tid,(void**)&val);
+```
+
+按照正常来说，只要是ret==0,pthread_join执行是正常的，那么我们可以输出下返回值：
+
+ printf("child thread with val=%d\n",*val);
+
+运行这段代码，发现出现段错误，写入core文件。错误的原因是因为a是局部变量，存储在用户栈中，当子线程执行结束后栈空间释放，利用a的地址找不到a了，然后下面pthread_join的val也就是空了，尝试去解引用空指针，会出现段错误。利用下面的代码验证了：
+
+```c
+ 37     if (val==NULL) {//尝试返回局部变量地址，这个val是空，自然解引用错误
+ 38         printf("val is null pointer\n");
+ 39     }
+ 40     else {
+ 41         printf("val is not null pointer\n");
+ 42         printf("child thread with val=%d\n",*val);
+ 43
+ 44     }
+```
+
+输出了val is null pointer。
+
+#### 12.pth_join3.c
+
+​		比较pth_join.c和pth_join2.c发现不应该返回局部变量地址，而是应该返回指针，因此其它逻辑不变，修改子进程代码如下：
+
+```c
+ 23 void * tfn(void * arg) {
+ 24     //int *a=(int*)malloc(sizeof(int));//正确方式
+ 25     int *a=NULL;//错误方式，没有开辟内存
+ 26     *a=10;
+ 27     return (void*)a;
+ 28 }
+```
+
+同样会出现段错误，原因很简单，指针没有开辟内存空间就使用*a,向未知内存空间赋值，肯定不允许。正确的方式应该先开辟空间，即24行的代码，然后其他逻辑不变，发现可以成功输出。
+
+#### 13.pth_join4.c
+
+​		要知道pth_join2.c出问题的根本原因是局部变量a 返回后，线程执行完毕，再去访问a地址的内存空间就是非法操作了。代码类比pth_join.c，首先还是结构体操作，子线程不开辟内存空间，而是由线程变量赋值，如下：
+
+```c
+ 28 void * tfn(void * arg) {
+ 29     struct thrd *tval=(struct thrd*) arg;//不初始化，直接传参
+ 30     tval->var=100;
+ 31     strcpy(tval->str,"hello,thread");
+ 32
+ 33     return (void*)tval;
+ 34 }
+```
+
+再创建线程时，传递局部变量做为参数，如下：
+
+```c
+   struct thrd arg;
+   int ret = pthread_create(&tid,NULL,tfn,(void*)&arg);
+```
+
+然后下面回收和之前一样，发现可以成功输出结构体的值。原因是arg作为参数传递，它是定义在主线程的，即便是子线程执行完毕了，主线程还没有结束，自然arg的地址空间就还在，所以不会出错。
+
+#### 14.pth_recy.c
+
+​	 		练习，循环创建多个线程，并利用pthread_join回收。因为pthread_join回收的参数是线程号，所以新建一个数组来存储线程号，并利用for循环创建线程和回收线程，代码如下：
+
+```c
+ pthread_t tid[5];
+ for(int i=0;i<5;i++) {
+ 	ret = pthread_create(&tid[i],NULL,tfn,(void*)i);
+ 	//...其它代码...
+ 	ret = pthread_join(tid[i],(void**)&retval);
+ }
+ 
+```
+
+#### 15.pth_cal.c
+
+​		了解pthread_cancel杀死进程。
+
+#### 16.pth_detach.c/pth_detach1.c/pth_detach2.c
+
+​			pthread_detach函数实现线程分离。线程处于detach状态后就不能利用join进行回收了，会返回ERROR IN VALUE错误（EINVAL）。测试代码如下：
+
+```C
+ 38     ret=pthread_detach(tid);//设置线程分离
+ 39     if (ret!=0)
+ 40         geterror("detach error");
+```
+
+分离成功返回0，否则返回的就是错误号。然后我们利用线程回收：
+
+```c
+ret =  pthread_join(tid,NULL);
+if (ret!=0) {
+ printf("second,join ret = %d,errno=%d\n",ret,errno);
+ geterror("join errno");
+}
+
+```
+
+发现输出的ret是22，说明join没有成功，但是输出的是
+
+join error:Success，显得十分别扭。这个原因是因为perror是通过errno显示错误的，但是我们刚刚join错误，errno还是0，并没有设置成其他值，所以在线程中perror失效，因为pthread_join()错误直接返回错误号22，我们应该用strerror(ret)来查看问题所在。
+
+   fprintf(stderr,"join ret errno=%s\n",strerror(ret));
+
+可以看到输出为：join ret errno=Invalid argument
+
+无效的参数错误，对于pthread_join,参数tid因为是detached的线程，因此无效。
+
+此外，我们在线程中判断错误的方式应该改成直接输出错误号，如下所示。
+
+```c
+ 36     if (ret!=0){
+ 37         fprintf(stderr,"create errno=%s\n",strerror(ret));
+ 38         exit(1);
+ 39     }
+```
+
+#### 17.pth_creat_detach.c/pth_creat_detach1.c
+
+​		分离态的线程不会产生僵尸线程。我们可以利用pthread_detach使得线程分离，但是假如有几十个线程，我们就需要有几十个pthread_detach()调用，这不合理，可以在线程创建的时候就使得线程是分离态。原理是修改pthread_create的参数2，是线程属性，之前我们一直传的是NULL。创建的步骤如下：
+
+```c
+pthread_attr_t attr;//创建线程的属性
+ret  = pthread_attr_init(&attr);//初始化线程属性
+//错误判断
+ret=pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);//设置线程属性为detached
+//错误判断
+ret =  pthread_create(&tid,&attr,tfn,NULL);//去创建线程
+//错误判断
+ret = pthread_attr_destroy(&attr);//销毁线程属性所占用的资源
+//错误判断
+
+```
+
+为了验证我们创建的线程是否是分离态，我们可以采取两种方法去判断，第一种方式就是利用join不能用于回收分离态线程（pth_creat_detach.c),会报无效参数错误，方法2就是利用pthread_attr_getdetachstate来判断。
+
+方式1代码：
+
+```c
+ 49     ret =  pthread_join(tid,NULL);
+ 50     if (ret!=0){
+ 51         fprintf(stderr,"join errno =%s\n",strerror(ret));
+ 52         exit(1);
+ 53     }
+```
+
+方式2代码：
+
+```c
+ int status;
+ ret = pthread_attr_getdetachstate(&attr,&status);
+ //错误判断
+ if (status==PTHREAD_CREATE_DETACHED) {
+     printf("pth_cre_deta success\n");
+ }
+```
 
 
 

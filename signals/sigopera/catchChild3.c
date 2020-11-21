@@ -25,16 +25,10 @@ void catch_Child(int sigNum)
     pid_t wpid;
     int status=0;
     while(( wpid = wait(&status))!=-1) {//循环回收，防止僵尸进程出现
-
         if (WIFEXITED(status)) {
-
             printf("----------------------:catch child：%d,retvalue=%d,\n",wpid,WEXITSTATUS(status));
         }
-
-
     }
-
-
 }
 int main(){
     pid_t pid;

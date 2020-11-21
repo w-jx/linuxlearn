@@ -1,4 +1,4 @@
-// File Name: pth_exit.c
+// File Name: pth_exit3.c
 // Author: wenjx
 // Created Time: 2020年11月20日 星期五 15时20分33秒
 
@@ -15,7 +15,7 @@
 #include<string.h>
 #include<sys/stat.h>
 #include <pthread.h>
-//用pthread_exit（NULL）尝试
+//用pthread_exit(NULL)退出当前线程，不管是在函数中使用还是直接使用，都是正常的
 void geterror(char *s){
     perror(s);
     exit(-1) ;
