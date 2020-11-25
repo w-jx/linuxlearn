@@ -765,7 +765,218 @@ ret = pthread_attr_destroy(&attr);//销毁线程属性所占用的资源
  }
 ```
 
+### 8.pthread/pth_mutex文件夹
 
+在pthread文件夹下的pth_mutex文件夹内容。
+
+#### 	1.printTest.c
+
+​			创建一次子进程，然后子进程中while循环输出hello（不换行），world（换行），父进程循环输出HELLO（不换行）,WORLD（换行）,实际测试不能如愿。有时候会出现两种输出在一排的现象，原因是主子线程存在竞争。
+
+#### 	2.printTestMutex.c
+
+​			利用互斥锁来尝试解决。我加锁的主子线程代码如下所示。
+
+子线程：
+
+```c
+ 21 void * tfn(void *arg) {
+ 22     srand(time(NULL));
+ 23     while (1) {
+ 24         pthread_mutex_lock(&mutex);
+ 25         printf("hello");
+ 26         sleep(rand()%3);
+ 27         printf(",world!\n");
+ 28         sleep(rand()%3);
+ 29         pthread_mutex_unlock(&mutex);
+ 30     }
+ 31     return NULL;
+ 32
+ 33 }
+```
+
+主线程：
+
+```c
+ 49     while (1) {
+ 50         pthread_mutex_lock(&mutex);
+ 51         printf("HELLO");
+ 52         sleep(rand()%3);
+ 53         printf(",WORLD!\n");
+ 54         sleep(rand()%3);
+ 55         pthread_mutex_unlock(&mutex);
+ 56
+ 57     }
+```
+
+虽然我这边有主动上锁，但是还是没有用。我还尝试把加锁和解锁放在while循环的外面，还是无法实现功能。输出几乎全部都是HELLO,WORLD（后面证实，如果把sleep时间缩短，可以看到hello,world）
+
+#### 3.printTestMutex1.c
+
+这个是符合要求的版本，和上面的唯一区别就是加锁和解锁的位置不同，以子线程为例：
+
+```c
+ 22     while (1) {
+ 23         pthread_mutex_lock(&mutex);
+ 24         printf("hello");
+ 25         sleep(rand()%3);
+ 26         printf(",world!\n");
+ 27         pthread_mutex_unlock(&mutex);
+ 28         sleep(2);
+ 29     }
+```
+
+关键区别在于解锁后又睡眠，而上面是睡眠后解锁。我们说锁的使用要保证粒度，即访问共享数据结束后，就解锁，而printTestMutex.c访问共享数据结束后没有及时解锁，这是一种错误用法。程序一开始，主线程先获得锁，子线程因此阻塞，当主线程执行到睡眠-解锁结束后，程序运行可能是
+
+1.主线程继续进行while循环，主线程继续获得锁
+
+2.子线程结束阻塞获得锁，主线程阻塞
+
+cpu调度是随机的，主子线程的竞争是必然的。而正确版本在主线程执行到解锁时，主线程睡眠了，在主线程解锁前，子线程一直阻塞在锁这边，那么主线程解锁，程序运行结果为
+
+1.主线程执行睡眠
+
+2.子线程结束阻塞，获得锁
+
+这两个事件互相不关联，所以能够同时进行，所以能够实现同步。
+
+#### 4.printTestMutex2.c
+
+​		在printTestMutex.c的基础上，我们可以看到printTestMutex.c执行大部分都是HELLO,WORLD，因为程序有睡眠较长，错误认为只有主线程在执行，实际上主子线程的竞争子线程也是能获得资源的，把睡眠时间改短一点，例如rand()%1,输出的时候，连续好多个大写的HELLO,WORLD，然后又连续很多个hello,world,目测可能hello，world的数量要少一点。这说明子线程并非完全没有执行机会。
+
+#### 5.deadmutex.c
+
+​		死锁的情况1.对一个线程加锁两次。第一次加锁，线程有访问公共区域的权限，换言之是程序能执行加锁下面的程序，而其他锁只能在阻塞状态。然后程序再次对该线程加锁，第二次阻塞在锁这这边一直到解锁，但是第一次加锁也是该线程，因此无法解锁，一直阻塞。
+
+#### 6.deadmutex2.c
+
+​		死锁的情况2：线程a拥有加锁1，线程b加锁2，然后线程a想要加锁2，线程b想要加锁1。线程a想要加锁2 就得线程b解锁，而线程b加锁1就得线程a解锁，因而出现死锁。
+
+#### 7.rwlock.c
+
+​		读写锁程序测试。创建8个线程，其中3个线程写，5个线程读，利用读写锁来共同操作同一个数据。在写线程，利用写锁，
+
+ pthread_rwlock_wrlock(&rwlock);
+
+在读线程，利用读锁
+
+pthread_rwlock_rdlock(&rwlock);
+
+#### 8.proc_consumer.c
+
+​		利用条件变量写的生产者，消费者模型。主线程依次创建两个线程，分为生产者线程和消费者线程。
+
+首先全局里初始化锁mutex和条件变量has_product，然后这边的产品是个链表类型的变量：
+
+```c
+ 19 struct msg {
+ 21     struct  msg* next;
+ 22     int num;
+ 24 };
+ 25 struct msg *head;//产品
+ 27 pthread_mutex_t mutex=PTHREAD_MUTEX_INITIALIZER;
+ 28 pthread_cond_t has_product=PTHREAD_COND_INITIALIZER;//静态初始化
+```
+
+生产者生产：
+
+```c
+ 30     while(1) {
+ 31         struct msg *mp=malloc(sizeof(struct msg));
+ 32         mp->num=rand()%1000;//模拟生产数据
+ 33         printf("---proc,mp->num=%d\n",mp->num);
+ 34         pthread_mutex_lock(&mutex);//加锁
+ 35         mp->next=head;//写公共区域操作
+ 36         head=mp;
+ 37         pthread_mutex_unlock(&mutex);//解锁
+ 38         pthread_cond_signal(&has_product);//唤醒阻塞再条件变量 has_data上的变量
+ 39         sleep(rand()%3);
+ 40     }
+```
+
+对于产品变量head,生产就是给定值。生产者代码首先定义结构体变量mp,更新num数据，然后加锁。在锁内将head更新为mp,然后解锁。
+
+再利用pthread_cond_signal来通知阻塞在条件变量has_product的线程。
+
+消费者消费代码：
+
+```c
+ 45     while(1) {
+ 46         struct msg *mp;
+ 47         pthread_mutex_lock(&mutex);//加锁
+ 48         if (head==NULL) //空的时候才判断不为空直接消费
+ 49          pthread_cond_wait(&has_product,&mutex);//阻塞等待条件变量,解锁
+ 51         mp=head;//当pthread_cond_wait返回时，会重新加锁
+ 52         head=mp->next;
+ 53         pthread_mutex_unlock(&mutex);
+ 54         printf("====================---consumer,mp->num=%d\n",mp->num);
+ 55         free(mp);
+ 56         sleep(rand()%3);}
+ 57     return NULL;
+ 58 }
+```
+
+首先也是定义一个没有开辟内存空间的结构体变量mp,然后加锁。两种可能的情况。
+
+1.这时候生产者正在执行锁内代码，那么这边阻塞
+
+2.生产者已经解锁，这边继续执行
+
+假如这边继续执行，那么生产者那边被阻塞，并且发现head仍然为空，意味着生产者还没有生产产品，无法消费，因此需要阻塞等待。即
+
+pthread_cond_wait(&has_product,&mutex);
+
+首先这边阻塞等待条件变量cond,然后解锁mutex,这样生产者那边可以结束阻塞，进行生产，等待生产完毕时利用
+
+pthread_cond_signal()唤醒阻塞在线程上的消费者线程，这样消费者线程解除阻塞，重新上锁，
+
+消费者消费产品时候，生产者因为锁阻塞无法生产。
+
+#### 9.proc_consumer2.c
+
+​			一个生产者，多个消费者的情况。
+
+生产者的代码都是相同的，消费者的代码有些变动。
+
+```c
+ 44     while(1) {
+ 45         struct msg *mp;
+ 46         pthread_mutex_lock(&mutex);//加锁
+ 47         while(head==NULL) //多个消费者时，要从if 改为while
+ 48             pthread_cond_wait(&has_product,&mutex);//阻塞等待条件变量,解锁
+ 49         //当pthread_cond_waitw返回时，会重新加锁
+ 50         mp=head;
+ 51         head=mp->next;
+ 52         pthread_mutex_unlock(&mutex);
+ 53         printf("====================---consumer:%lu,mp->num=%d\n",pthread_self(),mp->num);
+ 54         free(mp);
+ 55         sleep(rand()%3);}
+```
+
+假如仍然为if.消费者A加锁后，消费者B和生产者阻塞,head为空满足，A线程循环阻塞在条件变量上，会解锁。
+
+这时候假如消费者B获得锁，head为空满足，B线程循环阻塞在条件变量上，会解锁。
+
+这时候生产者结束阻塞，写head,然后解锁，pthread_cond_signal通知阻塞在条件变量的线程（至少通知1个，应该是全部通知）。A,B线程都结束阻塞，假如A获得了，因为是if,因此下面就进行消费，然后
+
+把head的内容读取到再置空，然后B线程也获得了，然后对已经为空的head进行->next操作，显然会出错。所以正确的方法把if改成while,当两个线程结束条件变量阻塞，是否进行消费还取决于head是否为空，如果head为空，可能是被别的消费者消费了，仍然需要进行条件变量阻塞。
+
+#### 10.proc_consumer3.c
+
+​		通过这个程序，主线程创建多线程可以重复利用tid,tid是和线程内部的pthread_self（）对应的。也就是如下的代码创建了两个线程：
+
+```c
+pthread_t tid[2];
+ret = pthread_create(&tid[0],NULL,producer,NULL);
+ret=pthread_create(&tid[1],NULL,consumer,NULL);
+ret=pthread_create(&tid[1],NULL,consumer,NULL);
+```
+
+第三行，第四行用的tid都是tid[1],但是创建的线程并不是同一个，我在proc_consumer3.c中把数组大小改成3，利用不同的tid创建线程，完全不影响程序结果。
+
+#### 11.proc_consumer4.c
+
+​		在proc_consumer2.c中，多个消费者情况要改成while(head==NULL),原因已经解释了，这边多个消费者然后仍然是if(head==NULL),查看运行结果，我们可以发现开始正常执行，过了一会出现段错误。
 
 ### 6.linuxsystem文件夹--前面linux系统基础知识
 

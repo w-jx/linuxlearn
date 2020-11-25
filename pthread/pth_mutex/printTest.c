@@ -15,7 +15,7 @@
 #include<string.h>
 #include<sys/stat.h>
 #include <pthread.h>
-//w输出测试，我们希望父子线程能够完整输出大写HELLO,WORLD
+//输出测试，我们希望父子线程能够完整输出大写HELLO,WORLD
 //或者小写hello,world，在换行
 void sys_err(char *s){
     perror(s);

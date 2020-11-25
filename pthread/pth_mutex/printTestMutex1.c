@@ -25,7 +25,7 @@ void * tfn(void *arg) {
         sleep(rand()%3);
         printf(",world!\n");
         pthread_mutex_unlock(&mutex);
-        sleep(rand()%3);
+        sleep(2);
     }
     return NULL;
 
@@ -55,7 +55,7 @@ int main(){
         sleep(rand()%3);
         printf(",WORLD!\n");
         ret= pthread_mutex_unlock(&mutex);
-        sleep(rand()%3);
+        sleep(2);//注意：原程序这边和子进程这边都是sleep(rand()%3);
         if (ret!=0) {
             fprintf(stderr,"lock error=%s\n",strerror(ret));
             exit(1);

@@ -36,7 +36,8 @@ void * producer(void*arg) {
         head=mp;
         pthread_mutex_unlock(&mutex);//解锁
         pthread_cond_signal(&has_product);//唤醒阻塞再条件变量 has_data上的变量
-        sleep(rand()%3);}
+        sleep(rand()%3);
+    }
     return NULL;
 }
 void* consumer(void* arg) {

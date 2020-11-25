@@ -67,7 +67,7 @@ int main(){
     if (ret!=0) {
         fprintf(stderr,"create err:&s\n",strerror(ret));
     }
-ret=pthread_create(&tid[1],NULL,consumer,NULL);
+    ret=pthread_create(&tid[1],NULL,consumer,NULL);
     if (ret!=0) {
         fprintf(stderr,"create err:&s\n",strerror(ret));
     }
