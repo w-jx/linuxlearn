@@ -978,6 +978,16 @@ ret=pthread_create(&tid[1],NULL,consumer,NULL);
 
 ​		在proc_consumer2.c中，多个消费者情况要改成while(head==NULL),原因已经解释了，这边多个消费者然后仍然是if(head==NULL),查看运行结果，我们可以发现开始正常执行，过了一会出现段错误。
 
+#### 12.proc_consumer_sem.c
+
+​			定义两个信号量proc ,consu，分别用于生产者，和消费者，在主线程中利用sem_init初始化。然后分别创建produce和consume线程。
+
+​	对于生产者，利用sem_wait（&proc)后，模拟生产过程，在生产完毕后，利用sem_post(&consu)通知阻塞在信号量consu上的消费者线程。
+
+​	而对于消费者，利用sem_wait(&consu)模拟消费过程，在消费完，利用sem_post(&proc)通知阻塞在信号量proc的生产和线程。
+
+
+
 ### 6.linuxsystem文件夹--前面linux系统基础知识
 
 #### 	1.open文件夹
