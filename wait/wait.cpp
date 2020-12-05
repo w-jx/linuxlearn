@@ -18,7 +18,7 @@ int main()
     }
     else if (pid>0 ) {
         
-        wpid = wait(&status);
+        wpid = wait(&status);//子进程没有死亡，阻塞在这边
         if (wpid == -1) {
             perror("wait error");
             exit(1);

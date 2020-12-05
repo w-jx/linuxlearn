@@ -17,7 +17,7 @@ int main(){
         exit(1);
 
     }
-    dup2(fd,STDOUT_FILENO);
+    dup2(fd,STDOUT_FILENO);//标准输出重定向到文件描述符中
 
     execlp("ps","ps","aux",NULL);
 

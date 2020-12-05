@@ -27,11 +27,15 @@ execlp("ps","ps","aux",NULL);
 
 ### 2.fork文件夹
 
-#### 	1.forktest2.cpp
+#### 1.forktest.c
 
-​		循环创建5个子进程
+​		循环创建5个子进程，父子进程里面都加了sleep,这样子进程按照创建顺序打印，最后父进程打印。	
 
-#### 	2.forktest3.cpp
+#### 	2.forktest2.cpp
+
+​		循环创建5个子进程,这个是个错误演示版本。输出6个i am 1th child，而本该父进程输出的parent没有输出。主要原因是for循环前定义了int i,for循环里面的i出了for循环就没有用了。
+
+#### 	3.forktest3.cpp
 
 ​		 进程共享,父子进程遵循读时共享,写时复制原则
 
