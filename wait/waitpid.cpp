@@ -20,16 +20,17 @@ int main()
     }
 
     if (5==i) {
-       auto wpid =  waitpid(-1,NULL,WNOHANG);//-1相当于wait
-       if (wpid==-1){
-        perror("waitpid error");
-        exit(1);
-       }
+        auto wpid =  waitpid(-1,NULL,WNOHANG);//-1相当于wait
+        if (wpid==-1){
+            perror("waitpid error");
+            exit(1);
+        }
         std::cout<<"parent process,wait a child finish:"<<wpid<<std::endl;
+        sleep(i);
     }
     else {
         sleep(i);
-        printf("i am %dth child\n",i+1);
+        printf("i am %dth %d child\n",i+1,getpid());
     }
 
 

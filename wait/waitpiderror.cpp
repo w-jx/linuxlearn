@@ -4,27 +4,25 @@
 #include <pthread.h>
 #include <iostream>
 #include <sys/wait.h>
-//错误解析，对waitpid093问题解决
+//出问题版本的，12/05u复习看，因为pid不一样
 int main()
 {
-    pid_t pid,wpid,tempid;  
+    pid_t pid,wpid;  
     int i; 
 
     for (i=0; i < 5; i++) {
-        pid = fork();
-
-        if (pid==0)//fork()函数子进程返回0，
+        if (fork() == 0){//循环期间，子进程不fork
+            if (i==2 ){
+                pid=getpid();
+            }
             break;
-
-        if (i==2 ){
-            tempid = pid;//父进程得到子进程pid 
         }
 
     }
 
     if (5==i) {
-        //    sleep(5);
-        wpid=waitpid(tempid,NULL,0);//指定一个进程回收,阻塞模式
+        sleep(5);
+        wpid=waitpid(pid,NULL,WNOHANG);//指定一个进程回收，
         if (wpid==-1){
             perror("waitpid error");
             exit(1);
@@ -36,5 +34,7 @@ int main()
         printf("i am %dth child,pid=%d\n",i+1,getpid());
     }
 
+
+    return 0;
 }
 
