@@ -1,6 +1,6 @@
-// File Name: print.c
+// File Name: fcntl_dup.c
 // Author: wenjx
-// Created Time: 2020年12月02日 星期三 21时31分27秒
+// Created Time: 2021年01月10日 星期日 12时06分35秒
 
 #include<stdio.h>
 #include<string.h>
@@ -19,7 +19,11 @@ void geterror(char *s){
     perror(s);
     exit(-1) ;
 }
-int main(){
-    printf("this is a print test process\n");
+int main(int argc,char **argv){
+    int fd=open(argv[1],O_RDWR|O_APPEND);
+    int newfd = fcntl(fd,F_DUPFD,fd);
+    char buf[1024]="hello,world\n";
+
+    write(newfd,buf,strlen(buf));//体会 strlen 和sizeof的区别，包含\0
     return 0 ;
 }
