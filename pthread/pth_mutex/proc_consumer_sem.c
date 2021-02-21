@@ -52,8 +52,8 @@ void* consume(void * arg) {
     return NULL;
 }
 void sys_err(char * s) {
-printf("error:%s\n",s);
-exit(1);
+    printf("error:%s\n",s);
+    exit(1);
 }
 int main(){
     pthread_t tid,cid;

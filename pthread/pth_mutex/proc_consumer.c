@@ -26,6 +26,8 @@ struct msg *head;
 //静态初始化
 pthread_mutex_t mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t has_product=PTHREAD_COND_INITIALIZER;
+
+
 void * producer(void*arg) {
     while(1) {
         struct msg *mp=malloc(sizeof(struct msg));

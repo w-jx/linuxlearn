@@ -16,7 +16,7 @@
 #include<sys/stat.h>
 #include <pthread.h>
 //读写锁测试,注意不检查返回值是为了程序逻辑清楚，实际工作要检查返回值
-int counter;
+int counter=0;
 pthread_rwlock_t rwlock;//读写锁
 //三个线程不定时写同一资源，5个线程不定时读同一全局资源
 void * th_write(void *arg)
