@@ -22,7 +22,7 @@ struct msg {
     int num;
 
 };
-struct msg *head;
+struct msg *head;//发现初始化为NULL，就会出错
 //静态初始化
 pthread_mutex_t mutex=PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t has_product=PTHREAD_COND_INITIALIZER;

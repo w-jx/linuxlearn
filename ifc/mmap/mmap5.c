@@ -30,7 +30,7 @@ int main(){
     fd = open("temp",O_RDWR|O_CREAT|O_TRUNC,0644);
     ftruncate(fd,4);
     int len = lseek(fd,0,SEEK_END);//获得文件大小
-    p = (int*)mmap(NULL,len,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);//改成MAP_PRIVATE
+    p = (int*)mmap(NULL,len,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);//在MAP_SHARED时候能够共享
     printf("global *p=%d\n",*p);
 
     if (p==MAP_FAILED) {

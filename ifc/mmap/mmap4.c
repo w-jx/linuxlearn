@@ -26,26 +26,24 @@ int main(){
     int fd=0;
     pid_t pid,pid1;
 
+    
     fd = open("testmap",O_RDWR|O_APPEND);
+    ftruncate(fd,10);
     int len = lseek(fd,0,SEEK_END);//获得文件大小
-
-    //p = mmap(NULL,len,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
-    p = mmap(NULL,len,PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);//改成MAP_PRIVATE
+    printf("len=%d\n",len);
+    p = mmap(NULL,len,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+    //p = mmap(NULL,len,PROT_READ|PROT_WRITE,MAP_PRIVATE,fd,0);//改成MAP_PRIVATE
 
     if (p==MAP_FAILED) {
         geterror("map error");
         exit(1);
-
     }
     close(fd);
-
     pid = fork();
-
     if (pid==0) {
         strcpy(p+len,"heeeedhsjdh");        
         var+=100;
         printf("child,pid=%d,var=%d,*p=%d,\n",getpid(),var,*p);
-
     }
     else {
         sleep(1);
@@ -57,9 +55,7 @@ int main(){
         if (s==-1) {
             geterror("munmap error");
             exit(1);
-
         }
     }
-
     return 0 ;
 }

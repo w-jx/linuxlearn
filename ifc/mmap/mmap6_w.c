@@ -23,8 +23,8 @@ void geterror(char *s){
 struct Student
 {
     int id;
-    char name[256];
     int age;
+    char name[256];
 };
 int main(){
 
@@ -49,7 +49,7 @@ int main(){
         printf("p->id=%d,stu.id=%d\n",p->id,stu.id);
         if (p->id>10000) break;
         stu.id++;
-        //usleep(1000);
+        usleep(1000);
 
     }
     int st =munmap(p,sizeof(stu));

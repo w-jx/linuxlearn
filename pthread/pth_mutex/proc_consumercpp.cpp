@@ -7,7 +7,7 @@
 #include <condition_variable>
 using namespace std;
 
-//条件变量实现的生产者 消费者模型 
+//条件变量实现的生产者 消费者模型
 struct msg
 {
     msg() = default;
@@ -19,7 +19,7 @@ struct msg *head;
 
 std::mutex mtx; //锁
 std::condition_variable has_product;
-
+//为什么这边要用unique_lock，因为condition_varible与unique_lock关联
 void producer()
 {
     srand(time(nullptr));
@@ -27,11 +27,12 @@ void producer()
     {
         msg *mp = new msg(rand() % 1000); //模拟生产数据
         printf("---proc,mp->num=%d\n", mp->num);
+        do
         {
             std::unique_lock<std::mutex> mylock(mtx);
             mp->next = head;
             head = mp;
-        }
+        } while (false);
 
         has_product.notify_one(); //唤醒阻塞在条件变量的线程
         std::this_thread::sleep_for(std::chrono::seconds(rand() % 3));
@@ -43,19 +44,20 @@ void consumer()
     while (true)
     {
         {
-            msg *mp=nullptr;
+            msg *mp = nullptr;
             //std::lock_guard<std::mutex> mylock(mtx);
-            std::unique_lock<std::mutex> mylock(mtx);
+            do
             {
+                std::unique_lock<std::mutex> mylock(mtx);
                 if (head == nullptr)
                     has_product.wait(mylock);
                 //如果阻塞，说明没有生产好
-                mp=head;
-                head=mp->next;
-            }
-              printf("====================---consumer,mp->num=%d\n",mp->num);
-              delete mp;
-              std::this_thread::sleep_for(std::chrono::seconds(rand()%3));
+                mp = head;
+                head = mp->next;
+            } while (false);
+            printf("====================---consumer,mp->num=%d\n", mp->num);
+            delete mp;
+            std::this_thread::sleep_for(std::chrono::seconds(rand() % 3));
         }
     }
 }

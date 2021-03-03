@@ -23,9 +23,7 @@ int main(){
 
     int ret = mkfifo("myfifo",0644);
     if (ret==-1) {
-
         geterror("mkfifo error");
-
     }
 
     return 0 ;
