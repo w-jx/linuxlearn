@@ -30,7 +30,8 @@ void * th_write(void *arg)
         usleep(1000);
         printf("--write:%d,%lu:counter:%d,++counter=%d\n",i,pthread_self(),t,++counter);
         pthread_rwlock_unlock(&rwlock);
-        usleep(10000);
+        //usleep(10000);
+        usleep(1000*500);
 
     }
 }
@@ -43,7 +44,8 @@ void * th_read(void *arg)
         usleep(1000);
         printf("--read:%d,%lu:counter:%d\n",i,pthread_self(),counter);
         pthread_rwlock_unlock(&rwlock);
-        usleep(2000);
+        //usleep(2000);
+        usleep(1000*500);
 
     }
 }
