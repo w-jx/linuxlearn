@@ -25,6 +25,7 @@ int main(){
         //sleep(i);
         printf("I am %d child,pid = %u\n",i+1,getpid());
     }else{
+        //结论：没有sleep(i),顺序是乱的
         //sleep(i); //观察下父子进程的sleep都没有，会是什么样
         printf("I am parnet\n");
     }
