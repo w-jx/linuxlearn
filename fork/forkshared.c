@@ -15,6 +15,8 @@
 #include<string.h>
 #include<sys/stat.h>
 // 测试父子进程全局变量
+//结论：全局变量i=100，然后在子进程我们更改i=200，在父进程延时5秒确保即便父进程先执行也不会打印i的值
+//结果发现i仍然是 100,也就是读的时候父子是共享的，当写的时候，就会复制一份新的
 int i  =100;
 void geterror(char *s){
     perror(s);
@@ -30,9 +32,8 @@ int main(int argc,char **argv){
         printf("after child i=200,i=%d\n",i);
     }
     else if(pid >0) {
-        printf("in father,i=%d\n",i);
+        printf("sleep for 5 seconds to make sure the i value has been changed\n");
         sleep(5);
-
         printf("after sleep,in father,i=%d\n",i);
 
     }

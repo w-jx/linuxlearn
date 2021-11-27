@@ -53,7 +53,6 @@ int main(){
         printf(",WORLD!\n");
         sleep(rand()%3);
         pthread_mutex_unlock(&mutex);
-
     }
     pthread_join(tid,NULL);
     pthread_mutex_destroy(&mutex);//销毁互斥锁

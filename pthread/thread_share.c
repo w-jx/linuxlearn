@@ -35,6 +35,6 @@ int main(){
         geterror("thread error");
     }
     sleep(1);
-    printf("after create,a=%d\n",a);
+    printf("after create thread and change the i value ,a=%d\n",a);
     return 0; 
 }

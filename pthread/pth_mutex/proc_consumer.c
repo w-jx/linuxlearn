@@ -46,7 +46,7 @@ void* consumer(void* arg) {
 
     while(1) {
         struct msg *mp;
-        pthread_mutex_lock(&mutex);//加锁
+    
         if (head==NULL) //空的时候才判断不为空直接消费即可
             pthread_cond_wait(&has_product,&mutex);//阻塞等待条件变量,解锁
         //当pthread_cond_wait返回时，会重新加锁

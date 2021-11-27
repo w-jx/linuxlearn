@@ -16,6 +16,7 @@
 #include<sys/stat.h>
 #include <pthread.h>
 //创建线程,发现子线程没有错误也没有执行
+//原因：创建子线程后，主线程return 了，子线程来不及执行就无了
 void geterror(char *s){
     perror(s);
     exit(-1) ;

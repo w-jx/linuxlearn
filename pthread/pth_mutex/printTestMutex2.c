@@ -15,7 +15,7 @@
 #include<string.h>
 #include<sys/stat.h>
 #include <pthread.h>
-//修改睡眠时间，发现大小写都在打印，但是打大写的时候打大写，持续很长时间
+//修改睡眠时间，仍然全部打印大写
 pthread_mutex_t  mutex;//全局锁
 void * tfn(void *arg) {
     srand(time(NULL));
